@@ -1,4 +1,4 @@
-#include "depend.h"
+#include "dinclude.h"
 
 const char* str_inc = "#include ";
 
