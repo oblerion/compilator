@@ -21,7 +21,7 @@ struct dinclude_file
     int count;
     struct dinclude list[DFILE_MAX];
     char name[30];
-   
+    char path[50];
 };
 
 struct dinclude_file GetInclude(const char* cfile);
@@ -36,3 +36,15 @@ struct dinclude_dir
 };
 
 struct dinclude_dir ScanIncludeDir(const char* cdir);
+
+#define DEPENDS_MAX 50
+
+struct depends
+{
+    int count;
+    struct dinclude list[DEPENDS_MAX];
+};
+struct depends depends();
+int depends_find(struct depends* dp,const char* name);
+void depends_add(struct depends* dp,struct dinclude dinc);
+void depend_update(struct depends* dp, struct dinclude_dir sidir);

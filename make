@@ -9,7 +9,7 @@ if [ -f "src/main.cpp" ];then
 fi
 CFLAGS="-g -Wall -L${LUALINUX}/lib -llua -lraylib -lGL -lm -lpthread -ldl -lrt -lX11"
 INC="-I${LUALINUX}/include" 
-EXEC="main"
+EXEC="compilator"
 DOBJ="build/linux64/obj/"
 
 RAYLIBWIN="/home/desnot/GD/raylib-5.0_win32_mingw-w64"
@@ -72,7 +72,8 @@ function link(){
 	command $TCC $TLINK $TCFLAGS "-o" $TEXEC; 
 	echo $TCC $TLINK $TCFLAGS "-o" $TEXEC; 
 	if [ -f $EXEC ];then
-		command ./$TEXEC;
+		echo "ok"
+		#command ./$TEXEC;
 	else 
 		echo " "
 		echo "[[ compile error ]]"
