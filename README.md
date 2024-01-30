@@ -1,5 +1,5 @@
 ## working log
-### on ubuntu
+### on ubuntu / clang
 - [x] include detection 
 - [x] source detection 
 - [x] compile config 
