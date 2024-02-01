@@ -14,4 +14,4 @@ config free/fast scan.
 - [x] folder lib
 - [x] i686-mingw32 lua raylib
 - [x] web lua raylib
-- [x] fix memory error on link
+- [ ] fix memory error on link
