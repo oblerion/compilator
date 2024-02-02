@@ -15,17 +15,6 @@ launch compilator / compilator.exe in project dir
 ## Working log
 ### on ubuntu / clang
 ### on window / gcc
-#### 0.1
-- [x] scan include dir -> get depends
-- [x] scan source dir -> get all need to be compile
-- [x] compile config 
-- [x] suport lua,raylib natif
-#### 0.2
-- [x] draw error on UI
-- [x] folder lib
-- [x] i686-mingw32 lua raylib on linux
-- [x] x86_64-mingw32 lua raylib on linux
-- [x] fix memory error on link
 #### 0.3
 - [ ] web lua raylib on linux
 - [ ] full suport c++ sys lib
