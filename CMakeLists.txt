@@ -5,7 +5,7 @@ project(init_c_raylib)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Dependencies
-set(RAYLIB_VERSION 4.5.0)
+set(RAYLIB_VERSION 5.0)
 set(PLATFORM "Web")
 find_package(raylib ${RAYLIB_VERSION} QUIET) # QUIET or REQUIRED
 if (NOT raylib_FOUND) # If there's none, fetch and build raylib
@@ -26,7 +26,11 @@ endif()
 
 # Our Project
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME} src/main.c)
+add_executable(${PROJECT_NAME} src/compilator.c)
+add_executable(${PROJECT_NAME} src/dinclude.c)
+add_executable(${PROJECT_NAME} src/dsource.c)
+add_executable(${PROJECT_NAME} src/libmanager.c)
 #set(raylib_VERBOSE 1)
 target_link_libraries(${PROJECT_NAME} raylib)
 
