@@ -3,7 +3,7 @@ Automatic compile simple raylib project,
 config free/fast scan.
 
 ## Start
-### config dir 
+### Config dir 
 unzip compilator_pack.zip in :
 - on linux /home/$USER/.compilator
 - on window C://compilator
