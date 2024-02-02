@@ -10,7 +10,7 @@ config free/fast scan.
 - [x] compile config 
 - [x] suport lua,raylib natif
 #### 0.2
-- [ ] draw error on UI
+- [x] draw error on UI
 - [x] folder lib
 - [x] i686-mingw32 lua raylib
 - [x] x86_64-mingw32 lua raylib 
