@@ -15,8 +15,11 @@ launch compilator / compilator.exe in project dir
 ## Working log
 ### on ubuntu / clang
 ### on window / gcc / wingw
-#### 0.3
+#### 0.3 linux
 - [x] run with path project
-- [ ] automatic install lib dir
-- [ ] web lua raylib on linux
+- [x] deb archive
+- [x] web build
 - [ ] full suport c++ sys lib
+#### 0.3 windows
+- [ ] testing
+
