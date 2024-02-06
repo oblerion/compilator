@@ -1,8 +1,6 @@
 #include "compilator.h"
-#include "libmanager.h"
 int main(int narg, char** larg)
 {
-    //struct libmanager lm = libmanager_init();
     struct compilator cr={0};
 #if defined(__linux)
     if(narg==1) 

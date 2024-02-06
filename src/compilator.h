@@ -6,12 +6,12 @@
 #include "dinclude.h"
 #include "dsource.h"
 
-#define COMPILATOR_VERSION "a0.2"
+#define COMPILATOR_VERSION "a0.3"
 
 const char* GetUserLinux();
 
 #if defined(__linux)
-#define COMPILATOR_CONFIGPATH TextFormat("/home/%s/.compilator",GetUserLinux())
+#define COMPILATOR_CONFIGPATH "/opt/compilator"
 #elif defined(WIN32)
 #define COMPILATOR_CONFIGPATH "C:\compilator"
 #endif
@@ -31,7 +31,6 @@ struct compilator
     enum SourceType projecttype;
     char target[10];
     char error_file[50];
-
 };
 
 struct compilator compilator(const char* target);
