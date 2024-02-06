@@ -35,7 +35,7 @@ compilator --target web
 - [x] run with path project
 - [x] deb archive
 - [x] web build
-- [ ] full suport c++ sys lib
+- [x] full suport c++ sys lib
 #### 0.3 windows
 - [ ] testing
 
