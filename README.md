@@ -8,7 +8,7 @@ config free/fast scan.
 sudo apt install clang mingw-w64 emscripten
 ```
 ### on window
-gcc mingw
+[mingw](https://sourceforge.net/projects/mingw)
 
 ## Start
 ### Config dir 
