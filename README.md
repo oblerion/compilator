@@ -5,8 +5,8 @@ config free/fast scan.
 ## Need
 
 ### on window
-[install mingw](https://sourceforge.net/projects/mingw)
-[install emscripten](https://gist.github.com/marcusbelcher/fc9b831bd9e6384799ed6505552ca44b)
+- [install mingw](https://sourceforge.net/projects/mingw)
+- [install emscripten](https://gist.github.com/marcusbelcher/fc9b831bd9e6384799ed6505552ca44b)
 ### on linux
 ```sh
 sudo apt install clang mingw-w64 emscripten
