@@ -1,17 +1,51 @@
 #include "compilator.h"
-const char* GetUserLinux()
-{
-    char* rstr=NULL;
-#if defined(__linux)
-    #include <pwd.h>
-    #include <unistd.h>
-    struct passwd* pw = getpwuid(geteuid());
-    if(pw)
-        rstr = pw->pw_name;
-#endif
-    return rstr;
-}
 
+bool _IfTestRequire(struct compilator* comp)
+{
+    bool rbool = true;
+    if(!DirectoryExists("asset") && TextIsEqual(comp->target,"web"))
+    {
+        comp->berror = true;
+        strcpy(comp->error_file,"need asset dir for web build");
+        rbool = false;
+    }
+    else if(!DirectoryExists("src"))
+    {
+        comp->berror = true;
+        strcpy(comp->error_file,TextFormat("src dir not exist"));
+        rbool = false;
+    }
+    return rbool;
+}
+#if defined(__linux)
+void _InitDir_Linux(struct compilator comp)
+{
+    char DOUT[20]="build/";
+    strcat(DOUT,comp.target);
+    if(TextIsEqual(comp.target,"web"))
+    {
+        system(TextFormat("if [ ! -d %s/obj ]; then mkdir -p %s/obj; fi",DOUT,DOUT));
+        system(TextFormat("if [ ! -f %s/index.html ]; then cp %s/web/index.html %s/.; fi",DOUT,COMPILATOR_CONFIGPATH, DOUT));
+    }
+    else 
+        system(TextFormat("if [ ! -d %s ]; then mkdir -p %s; fi",DOUT,DOUT));
+}
+#endif
+#if defined(WIN32)
+void _InitDir_Window(struct compilator comp)
+{
+
+    const char* DOUT = TextFormat("build/%s",comp.target);
+    if(TextIsEqual(comp.target,"web"))
+    {
+        system(TextFormat("if not exist %c%s%c (mkdir %s/obj)",'"',DOUT,'"',DOUT));
+        system(TextFormat("if not exist %c%s/index.html%c (cp %s/web/index.html %s/.)",'"',DOUT,'"',COMPILATOR_CONFIGPATH,DOUT));
+    }
+    else 
+        system(TextFormat("if not exist %c%s%c (mkdir %s)",'"',DOUT,'"',DOUT));
+
+}
+#endif
 struct compilator compilator(const char* target)
 {
     struct compilator cr;
@@ -22,33 +56,18 @@ struct compilator compilator(const char* target)
     strcpy(cr.target,target);
 
     // init out dir 
-    const char* DOUT = TextFormat("build/%s",target);
-    #if defined(__linux)
-        if(TextIsEqual(target,"web"))
-        {
-            system(TextFormat("if [ ! -d %s/obj ]; then mkdir -p %s/obj; fi",DOUT,DOUT));
-            system(TextFormat("if [ ! -f %s/index.html ]; then cp %s/web/index.html %s/.; fi",DOUT,COMPILATOR_CONFIGPATH, DOUT));
-        }
-        else 
-            system(TextFormat("if [ ! -d %s ]; then mkdir -p %s; fi",DOUT,DOUT));
-    #endif
+#if defined(__linux)
+    _InitDir_Linux(cr);
+#elif defined(WIN32)
+    _InitDir_Window(cr);
+#endif
 
-    if(!DirectoryExists("asset") && TextIsEqual(target,"web"))
-    {
-        cr.berror = true;
-        strcpy(cr.error_file,"need asset dir for web build");
-    }
-    else if(DirectoryExists("src"))
+    if(_IfTestRequire(&cr))
     {
         depend_update(&cr.depends,ScanIncludeDir("src"));
         sources_update(&cr.sources,ScanSourceDir("src"));
         if(cr.sources.count>0)
             cr.projecttype = cr.sources.files[0].type;
-    }
-    else 
-    {
-        cr.berror = true;
-        strcpy(cr.error_file,TextFormat("src dir not exist"));
     }
 
     printf("--------- compilator ver %s ---------- BEGIN\n",COMPILATOR_VERSION);
@@ -79,196 +98,253 @@ bool compilator_isinstalledlib(const char *name, const char *target)
     return false;
 }
 
-const char* _GetCompiler(struct compilator* compilator)
+const char* _GetCC(struct compilator* compilator)
 {
+    const char* sCC = NULL;
     #if defined(__linux)
         if(compilator->projecttype==ST_C)
         {
             if(TextIsEqual(compilator->target,"linux64"))
-                return TextFormat("%s","clang");
+                sCC = TextFormat("%s","clang");
             else if(TextIsEqual(compilator->target,"win32"))
-                return TextFormat("%s","i686-w64-mingw32-gcc");
+                sCC = TextFormat("%s","i686-w64-mingw32-gcc");
             else if(TextIsEqual(compilator->target,"win64"))
-                return TextFormat("%s","x86_64-w64-mingw32-gcc");
+                sCC = TextFormat("%s","x86_64-w64-mingw32-gcc");
             else if(TextIsEqual(compilator->target,"web"))
-                return TextFormat("%s","emcc");
+                sCC = TextFormat("%s","emcc");
         }
         else if(compilator->projecttype==ST_CPP)
         {
             if(TextIsEqual(compilator->target,"linux64"))
-                return TextFormat("%s","clang++");
+                sCC = TextFormat("%s","clang++");
             else if(TextIsEqual(compilator->target,"win32"))
-                return TextFormat("%s","i686-w64-mingw32-g++");
+                sCC = TextFormat("%s","i686-w64-mingw32-g++");
             else if(TextIsEqual(compilator->target,"win64"))
-                return TextFormat("%s","x86_64-w64-mingw32-g++");
+                sCC = TextFormat("%s","x86_64-w64-mingw32-g++");
             else if(TextIsEqual(compilator->target,"web"))
-                return TextFormat("%s","em++");
+                sCC = TextFormat("%s","em++");
         }
     #elif defined(WIN32) || defined(WIN64)
         if(compilator->projecttype==ST_C)
         {
-            return TextFormat("%s","gcc");
+            sCC = TextFormat("%s","gcc");
         }
         else if(compilator->projecttype==ST_CPP)
         {
-            return TextFormat("%s","g++");
+            sCC = TextFormat("%s","g++");
         }
     #endif
-    return "";
+    return sCC;
+}
+
+const char* _GetDOBJ(struct compilator compilator)
+{
+    const char* sDOBJ = NULL;
+    if(TextIsEqual(compilator.target,"web"))
+        sDOBJ = TextFormat("build/%s/obj/",compilator.target);
+    else 
+        sDOBJ = TextFormat("build/%s/",compilator.target);       
+    return sDOBJ;
+}
+
+const char* _GetARG_comp(struct compilator compilator)
+{
+    char sARG[300] = "";
+    const char* sARG1 = TextFormat("-g -Wall -I%s/%s/include ",COMPILATOR_CONFIGPATH,compilator.target);
+    const char* sARG2_web = "-Isrc -I. ";
+
+#if defined(__linux)
+    const char* sARG2_win32 = "-I/usr/i696-w64-mingw32/include ";
+    const char* sARG2_win64 = "-I/usr/x86_64-w64-mingw32/include ";
+#endif
+
+    if(TextIsEqual(compilator.target,"linux64"))
+    {
+        strcat(sARG,sARG1);
+    }
+    else if(TextIsEqual(compilator.target,"web"))
+    {
+        strcat(sARG,sARG1);
+        strcat(sARG,sARG2_web);
+    }
+    else if(TextIsEqual(compilator.target,"win32"))
+    {
+#if defined(__linux)
+        strcat(sARG,sARG1);
+        strcat(sARG,sARG2_win32);
+#else 
+        strcat(sARG,sARG1);
+#endif
+    }
+    else if(TextIsEqual(compilator.target,"win64"))
+    {
+#if defined(__linux)
+        strcat(sARG,sARG1);
+        strcat(sARG,sARG2_win64);
+#else
+        strcat(sARG,sARG1);
+#endif
+    }
+    return TextFormat("%s",sARG);;
+}
+
+bool _Compile(struct compilator* compilator,const char* sCC,const char* sfile,const char* sARG,const char* sDOBJ)
+{
+    bool rbool = true;
+    const char* dfileo = TextFormat("%s%s.o",sDOBJ,GetFileNameWithoutExt(sfile));
+    const char* ssys = TextFormat("%s -c %s %s -o %s",sCC, sfile, sARG, dfileo);
+    puts(ssys);
+    system(ssys);
+
+    if(FileExists(dfileo))
+    {
+        TextCopy(compilator->objs.path[compilator->objs.count++], dfileo);
+    }
+    else 
+    {
+        compilator->berror=true;
+        puts("COMPILE ERROR");
+        strcpy(compilator->error_file,TextFormat("Compile Error file: %s",sfile));
+        rbool = false;
+    }
+    return rbool;
 }
 
 void compilator_comp(struct compilator* compilator)
 {
+    puts("compile : BEGIN");
     if(!compilator->berror)
     {
-        puts("compile : BEGIN");
-        char sARG[100]="";
-        strcpy(sARG,TextFormat("-g -Wall -I%s/%s/include ",COMPILATOR_CONFIGPATH,compilator->target));
-        char sCC[20]="";
-        strcpy(sCC,_GetCompiler(compilator));
-        char sDOBJ[60]="";
-        if(TextIsEqual(compilator->target,"web"))
-            strcpy(sDOBJ,TextFormat("build/%s/obj/",compilator->target));
-        else 
-            strcpy(sDOBJ,TextFormat("build/%s/",compilator->target));
-        
-        if(TextIsEqual(compilator->target,"web"))
-        {
-            strcat(sARG,"-Isrc -I.");
-        }
-        else if(!DirectoryExists(sDOBJ)) 
-            system(TextFormat("mkdir %s",sDOBJ));
-
-    #if defined(__linux)
-        if(TextIsEqual(compilator->target,"win32"))
-        {
-            strcat(sARG,"-I/usr/i696-w64-mingw32/include ");
-        }
-        else if(TextIsEqual(compilator->target,"win64"))
-        {
-            strcat(sARG,"-I/usr/x86_64-w64-mingw32/include ");
-        }
-    #endif
-        char sfile[30]="";
-        char sfileo[30]="";
-        char dfileo[60]="";
-        char ssys[200]="";
+        char sARG[200];
+        strcpy(sARG,_GetARG_comp(*compilator));
+        char sCC[20];
+        strcpy(sCC,_GetCC(compilator));
+        char sDOBJ[60];
+        strcpy(sDOBJ,_GetDOBJ(*compilator));
+   
         for(int i=0;i<compilator->sources.count;i++)
         {
-            strcpy(sfile, compilator->sources.files[i].name);
-            strcpy(sfileo,TextFormat("%s.o",GetFileNameWithoutExt(sfile)));
-            strcpy(dfileo,TextFormat("%s%s",sDOBJ,sfileo));
-
-            strcpy(ssys,TextFormat("%s -c %s %s -o %s",sCC, sfile, sARG, dfileo));
-            puts(ssys);
-            system(ssys);
-            if(FileExists(dfileo))
-            {
-                TextCopy(compilator->objs.path[compilator->objs.count++], dfileo);
-            }
-            else 
-            {
-                compilator->berror=true;
-                puts("COMPILE ERROR");
-                strcpy(compilator->error_file,TextFormat("Compile Error file: %s",sfile));
+            if(!_Compile(compilator,sCC,compilator->sources.files[i].name,sARG,sDOBJ))
                 break;
-            }
         }
-        puts("compile : END");
+    }
+    puts("compile : END");
+}
+
+const char* _GetARG_link(struct compilator* compilator)
+{
+    char sARG[200] = "";
+    const char* sARG_noWeb = TextFormat("-L%s/%s/lib -g -Wall",COMPILATOR_CONFIGPATH,compilator->target); 
+    
+    const char* sARG_raylib_linux = " -lraylib -lGL -lm -lpthread -ldl -lrt -lX11";
+    const char* sARG_raylib_win32 = " -lraylib -lopengl32 -lgdi32 -lwinmm";
+    const char* sARG_raylib_web = TextFormat(" %s/%s/lib/libraylib.a",COMPILATOR_CONFIGPATH,compilator->target);
+    
+    const char* sARG_lua_web = TextFormat(" %s/%s/lib/liblua.a",COMPILATOR_CONFIGPATH,compilator->target);
+    const char* sARG_lua = " -llua";
+
+    const char* sARG_Win_C = " -mwindows -static-libgcc";
+    const char* sARG_Win_Cpp = " -mwindows -static-libgcc -static-libstdc++";
+
+    if(!TextIsEqual(compilator->target,"web"))
+        strcat(sARG,sARG_noWeb);
+
+    // raylib add lib
+    if(compilator_findlib(*compilator,"raylib.h") && 
+    compilator_isinstalledlib("raylib.h",compilator->target))
+    {                
+        if(TextIsEqual(compilator->target,"linux64"))
+        {
+            strcat(sARG,sARG_raylib_linux);
+        }
+        else if(TextIsEqual(compilator->target,"win32"))
+        {
+            strcat(sARG,sARG_raylib_win32);
+        }
+        else if(TextIsEqual(compilator->target,"web"))
+        {
+            strcat(sARG,sARG_raylib_web);
+        }
+    }
+
+    // lua add lib
+    if(compilator_findlib(*compilator,"lua.h") && 
+    compilator_isinstalledlib("lua.h",compilator->target))
+    {
+        if(TextIsEqual(compilator->target,"web"))
+            strcat(sARG,sARG_lua_web);
+        else 
+            strcat(sARG,sARG_lua);
+    }
+
+    // std add lib
+    if(TextIsEqual(compilator->target,"win32") || 
+        TextIsEqual(compilator->target,"win64"))
+    {
+#if defined(__linux) || defined(WIN32) || defined(WIN64)
+        if(compilator->projecttype==ST_C) 
+            strcat(sARG,sARG_Win_C);
+        else if(compilator->projecttype==ST_CPP) 
+            strcat(sARG,sARG_Win_Cpp);
+#endif
+    }
+    return TextFormat("%s",sARG);
+}
+
+const char* _GetSOBJ(struct compilator* compilator)
+{
+    const int size = compilator->objs.count*100;
+    char sOBJ[size];
+    // get all obj
+    for(int i=0;i<compilator->objs.count;i++)
+    {
+        if(i>0) strcat(sOBJ," ");
+        strcat(sOBJ,compilator->objs.path[i]);
+    }
+    return TextFormat("%s",sOBJ);
+}
+
+void _Link(struct compilator* compilator,const char* sCC,const char* sOBJ,const char* sARG)
+{
+    const char* execname = GetFileName(GetWorkingDirectory());
+    const char* ssys = NULL;
+    // output file
+    if(TextIsEqual(compilator->target,"linux64"))
+    {
+        ssys = TextFormat("%s %s %s -o %s",sCC,sOBJ,sARG,execname);
+    }
+    else if(TextIsEqual(compilator->target,"win32") || 
+        TextIsEqual(compilator->target,"win64"))
+    {
+        ssys = TextFormat("%s %s %s -o %s.exe",sCC,sOBJ,sARG,execname);
+    }
+    else if(TextIsEqual(compilator->target,"web"))
+    {
+        ssys = TextFormat("%s -o build/web/index.js build/web/obj/*.o -Os -Wall %s -s USE_GLFW=3 -s ASYNCIFY -DPLATFORM_WEB --preload-file ./asset",sCC,sARG);   
+    }
+    puts(ssys);
+    system(ssys);
+    if(!TextIsEqual(compilator->target,"web") && 
+        !FileExists(execname) && 
+        !FileExists(TextFormat("%s.exe",execname)) ) 
+    {
+        compilator->berror=true;
+        strcpy(compilator->error_file,"Link Error");
     }
 }
 
 void compilator_link(struct compilator* compilator)
 {
     puts("link : BEGIN");
-    char sARG[300]="";
-    char sCC[20]="";
-    strcpy(sCC,_GetCompiler(compilator));
-    char sOBJ[1500]="";
+    const char* sARG = _GetARG_link(compilator);
+    const char* sCC = _GetCC(compilator);
+    const char* sOBJ = NULL;
 
     if(!compilator->berror)
     {
-        if(!TextIsEqual(compilator->target,"web"))
-            strcpy(sARG,TextFormat("-L%s/%s/lib -g -Wall",COMPILATOR_CONFIGPATH,compilator->target));
-
-        // raylib add lib
-        if(compilator_findlib(*compilator,"raylib.h") && 
-        compilator_isinstalledlib("raylib.h",compilator->target))
-        {                
-            if(TextIsEqual(compilator->target,"linux64"))
-            {
-                strcat(sARG," -lraylib -lGL -lm -lpthread -ldl -lrt -lX11");
-            }
-            else if(TextIsEqual(compilator->target,"win64"))
-            {
-                strcat(sARG," -lraylib -lraylibdll -lopengl32 -lgdi32 -lwinmm");
-            }
-            else if(TextIsEqual(compilator->target,"win32"))
-            {
-                strcat(sARG," -lraylib -lopengl32 -lgdi32 -lwinmm");
-            }
-            else if(TextIsEqual(compilator->target,"web"))
-            {
-                strcat(sARG,TextFormat(" %s/%s/lib/libraylib.a",COMPILATOR_CONFIGPATH,compilator->target));
-            }
-        }
-        // lua add lib
-        if(compilator_findlib(*compilator,"lua.h") && 
-        compilator_isinstalledlib("lua.h",compilator->target))
-        {
-            if(TextIsEqual(compilator->target,"web"))
-            {
-                strcat(sARG,TextFormat(" %s/%s/lib/liblua.a",COMPILATOR_CONFIGPATH,compilator->target));
-            }
-            else 
-                strcat(sARG," -llua");
-        }
-
-        // std add lib
-        if(TextIsEqual(compilator->target,"win32") || 
-            TextIsEqual(compilator->target,"win64"))
-        {
-    #if defined(__linux) || defined(WIN32) || defined(WIN64)
-            if(compilator->projecttype==ST_C) 
-                strcat(sARG, " -mwindows -static-libgcc");
-            else if(compilator->projecttype==ST_CPP) 
-                strcat(sARG, " -mwindows -static-libgcc -static-libstdc++");
-    #endif
-        }
-
-        // get all obj
-        for(int i=0;i<compilator->objs.count;i++)
-        {
-            if(i>0) strcat(sOBJ," ");
-            strcat(sOBJ,compilator->objs.path[i]);
-        }
-        char ssys[500]="";
-        #define execname GetFileName(GetWorkingDirectory())
-        // output file
-        if(TextIsEqual(compilator->target,"linux64"))
-        {
-            strcpy(ssys,TextFormat("%s %s %s -o %s",sCC,sOBJ,sARG,execname));
-        }
-        else if(TextIsEqual(compilator->target,"win32") || 
-            TextIsEqual(compilator->target,"win64"))
-        {
-            strcpy(ssys,TextFormat("%s %s %s -o %s.exe",sCC,sOBJ,sARG,execname));
-        }
-        else if(TextIsEqual(compilator->target,"web"))
-        {
-            //strcpy(ssys,TextFormat("%s %s %s -o %s.exe",sCC,sOBJ,sARG,execname));
-            strcpy(ssys,TextFormat("%s -o build/web/index.js build/web/obj/*.o -Os -Wall %s -s USE_GLFW=3 -s ASYNCIFY -DPLATFORM_WEB --preload-file ./asset",sCC,sARG));
-//emcc -o build/web/index.js src/*.o -Os -Wall $RAYLIBWEB/lib/libraylib.a -I. -Iinclude -L. -Llib -s USE_GLFW=3 -s ASYNCIFY -DPLATFORM_WEB --preload-file ./asset;
-        }
-        puts(ssys);
-        system(ssys);
-        if(!FileExists(execname) && !FileExists(TextFormat("%s.exe",execname)) ) 
-        {
-            compilator->berror=true;
-            strcpy(compilator->error_file,"Link Error");
-        }
-        puts("link : END");
+        sOBJ = _GetSOBJ(compilator);
+       _Link(compilator,sCC,sOBJ,sARG);
     }
-  
+    puts("link : END");
     printf("--------- compilator ver %s ---------- END\n",COMPILATOR_VERSION);
 }

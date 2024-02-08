@@ -8,12 +8,10 @@
 
 #define COMPILATOR_VERSION "a0.3"
 
-const char* GetUserLinux();
-
 #if defined(__linux)
 #define COMPILATOR_CONFIGPATH "/opt/compilator"
 #elif defined(WIN32)
-#define COMPILATOR_CONFIGPATH "C:\compilator"
+#define COMPILATOR_CONFIGPATH "c:\\compilator"
 #endif
 
 struct objs
