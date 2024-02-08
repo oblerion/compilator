@@ -3,12 +3,13 @@ Automatic compile simple raylib project,
 config free/fast scan.
 
 ## Need
+
+### on window
+[install mingw](https://sourceforge.net/projects/mingw)
 ### on linux
 ```sh
 sudo apt install clang mingw-w64 emscripten
 ```
-### on window
-[mingw](https://sourceforge.net/projects/mingw)
 
 ## Start
 ### Config dir 
